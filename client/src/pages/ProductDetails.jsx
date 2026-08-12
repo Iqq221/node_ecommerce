@@ -1,164 +1,134 @@
-import {
-    useEffect,
-    useState
-}
-from "react"
+import { useEffect, useState } from "react"
+import { useParams, useNavigate, Link } from "react-router-dom"
 
-import {
-    useParams
-}
-from "react-router-dom"
+function ProductDetails() {
+    const { id } = useParams()
+    const navigate = useNavigate()
+    const [product, setProduct] = useState(null)
+    const [quantity, setQuantity] = useState(1)
+    const [adding, setAdding] = useState(false)
+    const [message, setMessage] = useState("")
 
-function ProductDetails(){
-
-    const { id } =
-    useParams()
-
-    const [product, setProduct] =
-    useState(null)
-
-    // GET PRODUCT
-    async function getProduct(){
-
-        try{
-
-            const response =
-            await fetch(
-
-                `http://localhost:3000/products/${id}`
-
-            )
-
-            const data =
-            await response.json()
-
+    async function getProduct() {
+        try {
+            const response = await fetch(`http://localhost:3000/products/${id}`)
+            if (!response.ok) return
+            const data = await response.json()
             setProduct(data)
-
-        }
-        catch(error){
-
+        } catch (error) {
             console.log(error)
-
         }
-
     }
 
-    // ADD TO CART
-    async function addToCart(){
-
-        try{
-
-            const token =
-            localStorage.getItem("token")
-
-            const response =
-            await fetch(
-                "http://localhost:3000/cart",
-                {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                        "application/json",
-
-                        Authorization:
-                        token
-
-                    },
-
-                    body: JSON.stringify({
-
-                        product_id:
-                        product.id,
-
-                        quantity: 1
-
-                    })
-
-                }
-            )
-
-            const data =
-            await response.json()
-
-            alert(data.message)
-
+    async function addToCart() {
+        const token = localStorage.getItem("token")
+        if (!token) {
+            navigate("/login")
+            return
         }
-        catch(error){
 
+        setAdding(true)
+        try {
+            const response = await fetch("http://localhost:3000/cart", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: token
+                },
+                body: JSON.stringify({
+                    product_id: product.id,
+                    quantity: quantity
+                })
+            })
+
+            const data = await response.json()
+            if (response.ok) {
+                setMessage("Added to Cart Successfully!")
+                setTimeout(() => setMessage(""), 3000)
+            } else {
+                setMessage(data.message || "Failed to add item")
+            }
+        } catch (error) {
             console.log(error)
-
+        } finally {
+            setAdding(false)
         }
-
     }
 
     useEffect(() => {
-
         getProduct()
+    }, [id])
 
-    }, [])
-
-    if(!product){
-
-        return <h1>Loading...</h1>
-
+    if (!product) {
+        return <div className="page-loading">Loading product details...</div>
     }
 
     return (
+        <div className="details-page-container">
+            <Link to="/" className="back-link">
+                ← Back to Products
+            </Link>
 
-        <div className="details-page">
+            {message && <div className="alert-banner success">{message}</div>}
 
-            {/* IMAGE */}
+            <div className="details-grid">
+                <div className="details-image-card">
+                    <img
+                        src={
+                            product.image
+                                ? `http://localhost:3000/uploads/${product.image}`
+                                : "https://via.placeholder.com/500?text=No+Image"
+                        }
+                        alt={product.name}
+                        className="details-img"
+                    />
+                </div>
 
-            <div className="details-image">
+                <div className="details-info-card">
+                    {product.category && (
+                        <span className="category-pill">{product.category}</span>
+                    )}
 
-                <img
+                    <h1 className="details-title">{product.name}</h1>
 
-                src={
-                `http://localhost:3000/uploads/${product.image}`
-                }
+                    <div className="details-price">
+                        ₹{Number(product.price).toFixed(2)}
+                    </div>
 
-                />
+                    <p className="details-description">{product.description}</p>
 
+                    <div className="details-quantity-selector">
+                        <label>Quantity:</label>
+                        <div className="quantity-controls">
+                            <button
+                                className="qty-btn"
+                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            >
+                                -
+                            </button>
+                            <span className="qty-val">{quantity}</span>
+                            <button
+                                className="qty-btn"
+                                onClick={() => setQuantity(quantity + 1)}
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="details-actions">
+                        <button
+                            className="btn btn-primary-lg"
+                            onClick={addToCart}
+                            disabled={adding}
+                        >
+                            {adding ? "Adding..." : "🛒 Add To Cart"}
+                        </button>
+                    </div>
+                </div>
             </div>
-
-            {/* CONTENT */}
-
-            <div className="details-content">
-
-                <h1>
-
-                    {product.name}
-
-                </h1>
-
-                <h2>
-
-                    ₹{product.price}
-
-                </h2>
-
-                <p>
-
-                    {product.description}
-
-                </p>
-
-                <button
-                onClick={addToCart}>
-
-                    Add To Cart
-
-                </button>
-
-            </div>
-
         </div>
-
     )
-
 }
 
 export default ProductDetails

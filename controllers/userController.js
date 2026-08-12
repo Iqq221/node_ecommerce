@@ -3,6 +3,14 @@ const db = require("../config/db")
 const bcrypt = require("bcrypt")
 
 const jwt = require("jsonwebtoken")
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function validateUserDetails({ name, email, password }, requirePassword = false) {
+    if (typeof name !== "string" || name.trim().length < 2) return "Name must be at least 2 characters long"
+    if (typeof email !== "string" || !emailPattern.test(email.trim())) return "Please provide a valid email address"
+    if (requirePassword && (typeof password !== "string" || password.length < 8)) return "Password must be at least 8 characters long"
+    return null
+}
 
 // REGISTER USER
 const registerUser = async (req, res) => {
@@ -10,6 +18,8 @@ const registerUser = async (req, res) => {
     try{
 
         const { name, email, password } = req.body
+        const validationError = validateUserDetails({ name, email, password }, true)
+        if (validationError) return res.status(400).json({ message: validationError })
 
         // HASH PASSWORD
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -21,7 +31,7 @@ const registerUser = async (req, res) => {
 
         db.query(
             sql,
-            [name, email, hashedPassword],
+            [name.trim(), email.trim().toLowerCase(), hashedPassword],
             (err, result) => {
 
                 if(err){
@@ -54,10 +64,13 @@ const loginUser = (req, res) => {
     try{
 
         const { email, password } = req.body
+        if (typeof email !== "string" || !emailPattern.test(email.trim()) || typeof password !== "string" || !password) {
+            return res.status(400).json({ message: "Enter a valid email address and password" })
+        }
 
         const sql = "SELECT * FROM users WHERE email = ?"
 
-        db.query(sql, [email], async (err, result) => {
+        db.query(sql, [email.trim().toLowerCase()], async (err, result) => {
 
             if(err){
 
@@ -102,7 +115,7 @@ const loginUser = (req, res) => {
                                 email: user.email,
                                 role: user.role
                             },
-                            "secretkey",
+                            process.env.JWT_SECRET || "secretkey",
                             {
                                 expiresIn: "7d"
                             }
@@ -176,6 +189,8 @@ const updateProfile = (req, res) => {
         const userId = req.user.id
 
         const { name, email } = req.body
+        const validationError = validateUserDetails({ name, email }, false)
+        if (validationError) return res.status(400).json({ message: validationError })
 
         const sql =
         `
@@ -186,7 +201,7 @@ const updateProfile = (req, res) => {
 
         db.query(
             sql,
-            [name, email, userId],
+            [name.trim(), email.trim().toLowerCase(), userId],
 
             (err, result) => {
 

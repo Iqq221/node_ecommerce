@@ -19,7 +19,7 @@ const authMiddleware = (req, res, next) => {
         }
 
         // VERIFY TOKEN
-        const verified = jwt.verify(token, "secretkey")
+        const verified = jwt.verify(token, process.env.JWT_SECRET || "secretkey")
 
         // SAVE USER DATA
         req.user = verified

@@ -1,165 +1,110 @@
-import { useEffect, useState }
-from "react"
+import { useEffect, useState } from "react"
+import ProductCard from "../components/ProductCard"
 
-import ProductCard
-from "../components/ProductCard"
+function Home() {
+    const [products, setProducts] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState("")
+    const [selectedCategory, setSelectedCategory] = useState("All")
 
-function Home(){
-
-    // STATE
-    const [products, setProducts] =
-    useState([])
-
-    const [search, setSearch] =
-    useState("")
-
-    const [category, setCategory] =
-    useState("All")
-
-    // FETCH PRODUCTS
-    async function getProducts(){
-
-        try{
-
-            const response =
-            await fetch(
-                "http://localhost:3000/products"
-            )
-
-            const data =
-            await response.json()
-
-            console.log(data)
-
-            setProducts(data)
-
-        }
-        catch(error){
-
+    async function getProducts() {
+        try {
+            const response = await fetch("http://localhost:3000/products")
+            const data = await response.json()
+            if (Array.isArray(data)) {
+                setProducts(data)
+            }
+        } catch (error) {
             console.log(error)
-
+        } finally {
+            setLoading(false)
         }
-
     }
 
-    // RUN WHEN PAGE LOADS
     useEffect(() => {
-
         getProducts()
-
     }, [])
-const filteredProducts =
-products.filter(product => {
 
-    const matchesSearch =
-    product.name
-    .toLowerCase()
-    .includes(
-        search.toLowerCase()
-    )
+    // Extract unique categories dynamically from products
+    const categories = ["All", ...new Set(products.map((p) => p.category).filter(Boolean))]
 
-    const matchesCategory =
+    const filteredProducts = products.filter((product) => {
+        const matchesSearch =
+            product.name?.toLowerCase().includes(search.toLowerCase()) ||
+            product.description?.toLowerCase().includes(search.toLowerCase())
 
-    category === "All"
+        const matchesCategory =
+            selectedCategory === "All" ||
+            product.category?.toLowerCase() === selectedCategory.toLowerCase()
 
-    ||
-
-    product.category === category
+        return matchesSearch && matchesCategory
+    })
 
     return (
-        matchesSearch &&
-        matchesCategory
-    )
-
-})
-    return (
-
-        <div className="products-section">
-
-            <h1 className="products-title">
-                Trending Products
-            </h1>
-
-            <div className="search-container">
-            <input type="text"
-                placeholder="Search products..."
-                value={search}
-                onChange={(e) =>
-                    setSearch(e.target.value)
-                    }
-                className="search-input"
-            />
+        <div className="home-container">
+            {/* HERO BANNER */}
+            <div className="hero-banner">
+                <div className="hero-content">
+                    <span className="hero-badge">Summer Collection 2026</span>
+                    <h1 className="hero-title">Discover Quality Products at Unbeatable Prices</h1>
+                    <p className="hero-subtitle">
+                        Shop electronics, fashion apparel, accessories, and everyday essentials with fast delivery.
+                    </p>
+                </div>
             </div>
 
-            
-            <div className="filter-buttons">
+            {/* CONTROLS BAR */}
+            <div className="catalog-header">
+                <h2 className="section-title">Explore Catalog</h2>
 
-            <button
-                onClick={() =>
-                    setCategory("All")
-                }>
-
-                All
-
-            </button>
-            
-            <button
-                onClick={() =>
-                    setCategory("Clothing")
-                }>
-
-                Clothing
-
-            </button>
-
-            <button
-                onClick={() =>
-                    setCategory("Accessories")
-                }>
-
-                Accessories
-
-            </button>
-
-            <button
-                onClick={() =>
-                    setCategory("Bags")
-                }>
-
-                    Bags
-
-            </button>
-
-            <button
-                onClick={() =>
-                    setCategory("Footwear")
-                }>
-
-                    Footwear
-
-            </button>
-
+                <div className="search-bar">
+                    <span className="search-icon">🔍</span>
+                    <input
+                        type="text"
+                        placeholder="Search by product name or keyword..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="search-input"
+                    />
+                    {search && (
+                        <button className="search-clear" onClick={() => setSearch("")}>
+                            ✕
+                        </button>
+                    )}
+                </div>
             </div>
 
-            <div id="products-container">
-
-                {
-                    filteredProducts.map(product => (
-
-                        <ProductCard
-                        key={product.id}
-                        product={product}
-                        />
-
-                    ))
-                }
-
+            {/* CATEGORY FILTERS */}
+            <div className="filter-chips">
+                {categories.map((cat) => (
+                    <button
+                        key={cat}
+                        className={`filter-chip ${selectedCategory === cat ? "active" : ""}`}
+                        onClick={() => setSelectedCategory(cat)}
+                    >
+                        {cat}
+                    </button>
+                ))}
             </div>
 
+            {/* PRODUCTS GRID */}
+            {loading ? (
+                <div className="page-loading">Loading products catalog...</div>
+            ) : filteredProducts.length === 0 ? (
+                <div className="empty-state">
+                    <div className="empty-icon">🔍</div>
+                    <h3>No Products Found</h3>
+                    <p>Try adjusting your search criteria or category filter.</p>
+                </div>
+            ) : (
+                <div className="products-grid">
+                    {filteredProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
+                </div>
+            )}
         </div>
-
     )
-
 }
 
 export default Home

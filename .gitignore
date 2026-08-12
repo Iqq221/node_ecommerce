@@ -2,15 +2,23 @@
 node_modules/
 client/node_modules/
 
-# Environment Variables
+# Environment variables and local secrets
 .env
+.env.*
+!.env.example
 
 # Logs
 *.log
 
-# Build Files
+# Build files and test coverage
 dist/
 client/dist/
+coverage/
+.nyc_output/
+
+# Runtime uploads (keep the directory in Git without committing future user uploads)
+uploads/*
+!uploads/.gitkeep
 
 # VS Code
 .vscode/
@@ -18,3 +26,13 @@ client/dist/
 # OS Files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Tooling and package-manager caches
+.eslintcache
+.vite/
+.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

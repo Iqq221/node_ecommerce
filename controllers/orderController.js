@@ -254,10 +254,34 @@ const updateOrderStatus =
 
 }
 
+// GET ORDER ITEMS
+const getOrderItems = (req, res) => {
+    const orderId = req.params.id
+
+    const sql = `
+    SELECT
+    order_items.id,
+    order_items.quantity,
+    order_items.price,
+    products.name,
+    products.image
+    FROM order_items
+    JOIN products ON order_items.product_id = products.id
+    WHERE order_items.order_id = ?
+    `
+
+    db.query(sql, [orderId], (err, result) => {
+        if(err){
+            return res.status(500).json({ message: "Database Error" })
+        }
+        res.json(result)
+    })
+}
+
 module.exports = {
     placeOrder,
     getOrders,
     getAllOrders,
-    updateOrderStatus
-
-}
+    updateOrderStatus,
+    getOrderItems
+}

@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom"
+import { Link, NavLink } from "react-router-dom"
+import Footer from "./Footer"
 
 function AdminLayout({ children }){
 
@@ -10,33 +11,26 @@ function AdminLayout({ children }){
 
             <div className="admin-sidebar">
 
-                <h1>
-                    Admin
-                </h1>
+                <Link to="/admin" className="admin-brand">ShopEase <span>Admin</span></Link>
+                <p className="admin-sidebar-label">Store management</p>
 
-                <Link to="/admin">
-                    Dashboard
-                </Link>
+                <nav className="admin-nav">
+                    <NavLink end to="/admin">Overview</NavLink>
 
-                <Link to="/admin/products">
-                    Products
-                </Link>
+                    <NavLink to="/admin/products">Products</NavLink>
 
-                <Link to="/admin/add-product">
-                    Add Product
-                </Link>
-                <Link to="/admin/orders">
-                        Orders
-                </Link>
+                    <NavLink to="/admin/add-product">Add product</NavLink>
+                    <NavLink to="/admin/orders">Orders</NavLink>
+                </nav>
+                <Link to="/" className="admin-store-link">View storefront →</Link>
 
             </div>
 
             {/* MAIN */}
 
-            <div className="admin-main">
-
-                {children}
-
+            <div className="admin-content-shell">
+                <main className="admin-main">{children}</main>
+                <Footer admin />
             </div>
 
         </div>

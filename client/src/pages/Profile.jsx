@@ -1,201 +1,129 @@
-import {
-    useEffect,
-    useState
-}
+import { useEffect, useState } from "react"
+import { validateAccount } from "../utils/validation"
 
-from "react"
+function Profile() {
+    const [user, setUser] = useState(null)
+    const [editMode, setEditMode] = useState(false)
+    const [name, setName] = useState("")
+    const [email, setEmail] = useState("")
+    const [loading, setLoading] = useState(true)
+    const [message, setMessage] = useState({ text: "", type: "" })
 
-function Profile(){
-
-    // USER STATE
-    const [user, setUser] =
-    useState(null)
-
-    // EDIT MODE
-    const [editMode, setEditMode] =
-    useState(false)
-
-    // FORM STATES
-    const [name, setName] =
-    useState("")
-
-    const [email, setEmail] =
-    useState("")
-
-    // GET PROFILE
-    async function getProfile(){
-
-        try{
-
-            const token =
-            localStorage.getItem("token")
-
-            const response =
-            await fetch(
-                "http://localhost:3000/users/profile",
-                {
-
-                    headers: {
-
-                        Authorization:
-                        token
-
-                    }
-
+    async function getProfile() {
+        try {
+            const token = localStorage.getItem("token")
+            const response = await fetch("http://localhost:3000/users/profile", {
+                headers: {
+                    Authorization: token
                 }
-            )
+            })
 
-            const data =
-            await response.json()
-
+            const data = await response.json()
             setUser(data)
-
-            setName(data.name)
-
-            setEmail(data.email)
-
-        }
-        catch(error){
-
+            setName(data.name || "")
+            setEmail(data.email || "")
+        } catch (error) {
             console.log(error)
-
+        } finally {
+            setLoading(false)
         }
-
     }
 
-    // UPDATE PROFILE
-    async function updateProfile(){
-
-        try{
-
-            const token =
-            localStorage.getItem("token")
-
-            const response =
-            await fetch(
-                "http://localhost:3000/users/profile",
-                {
-
-                    method: "PUT",
-
-                    headers: {
-
-                        "Content-Type":
-                        "application/json",
-
-                        Authorization:
-                        token
-
-                    },
-
-                    body: JSON.stringify({
-
-                        name,
-                        email
-
-                    })
-
-                }
-            )
-
-            const data =
-            await response.json()
-
-            alert(data.message)
-
-            setEditMode(false)
-
-            getProfile()
-
+    async function updateProfile() {
+        const error = validateAccount({ name, email }, { requirePassword: false })
+        if (error) {
+            setMessage({ text: error, type: "error" })
+            return
         }
-        catch(error){
+        try {
+            const token = localStorage.getItem("token")
+            const response = await fetch("http://localhost:3000/users/profile", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: token
+                },
+                body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase() })
+            })
 
+            const data = await response.json()
+            if (response.ok) {
+                setMessage({ text: "Profile updated successfully!", type: "success" })
+                setEditMode(false)
+                getProfile()
+            } else {
+                setMessage({ text: data.message || "Failed to update profile", type: "error" })
+            }
+        } catch (error) {
             console.log(error)
-
+            setMessage({ text: "Error updating profile", type: "error" })
         }
-
     }
 
     useEffect(() => {
-
         getProfile()
-
     }, [])
 
-    if(!user){
-
-        return <h1>Loading...</h1>
-
+    if (loading) {
+        return <div className="page-loading">Loading user profile...</div>
     }
 
     return (
+        <div className="auth-page">
+            <div className="auth-form">
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <div style={{ fontSize: '3.5rem', marginBottom: '0.5rem' }}>👤</div>
+                    <h1 className="admin-title">Account Profile</h1>
+                </div>
 
-        <div className="profile-page">
+                {message.text && (
+                    <div className={`alert-banner ${message.type}`}>
+                        {message.text}
+                    </div>
+                )}
 
-            <div className="profile-card">
+                <div className="form-group">
+                    <label>Full Name</label>
+                    <input
+                        type="text"
+                        value={name}
+                        disabled={!editMode}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        minLength="2"
+                    />
+                </div>
 
-                <h1>
-                    My Profile
-                </h1>
+                <div className="form-group">
+                    <label>Email Address</label>
+                    <input
+                        type="email"
+                        value={email}
+                        disabled={!editMode}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                </div>
 
-                {/* NAME */}
-
-                <input
-                type="text"
-
-                value={name}
-
-                disabled={!editMode}
-
-                onChange={(e) =>
-                setName(e.target.value)
-                }
-                />
-
-                {/* EMAIL */}
-
-                <input
-                type="email"
-
-                value={email}
-
-                disabled={!editMode}
-
-                onChange={(e) =>
-                setEmail(e.target.value)
-                }
-                />
-
-                {
-                    editMode ? (
-
-                        <button
-                        onClick={updateProfile}>
-
-                            Save Changes
-
-                        </button>
-
+                <div style={{ marginTop: '1.5rem' }}>
+                    {editMode ? (
+                        <div className="action-buttons-flex">
+                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={updateProfile}>
+                                Save Changes
+                            </button>
+                            <button className="btn btn-secondary" onClick={() => setEditMode(false)}>
+                                Cancel
+                            </button>
+                        </div>
                     ) : (
-
-                        <button
-                        onClick={() =>
-                        setEditMode(true)
-                        }>
-
-                            Edit Profile
-
+                        <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => setEditMode(true)}>
+                            Edit Profile Details
                         </button>
-
-                    )
-                }
-
+                    )}
+                </div>
             </div>
-
         </div>
-
     )
-
 }
 
 export default Profile
